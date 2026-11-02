@@ -3,6 +3,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import connectDB from "../src/config/db.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ const PORT = process.env.PORT || 6000;
 
 const startServer = async () => {
     try {
+        await connectDB();
         app.listen(PORT, () => {
             console.log(`Server running on PORT: http://localhost:${PORT}`);
         });
