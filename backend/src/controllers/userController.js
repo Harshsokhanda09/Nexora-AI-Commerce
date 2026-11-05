@@ -5,9 +5,9 @@ import jwt from "jsonwebtoken";
 // Generate JWT and save it in browser cookie
 const generateToken = (userId, res) => {
     const token = jwt.sign(
-        {userId},
+        { userId },
         process.env.JWT_SECRET,
-        {expressIn: "7d"}
+        { expiresIn: "7d" }
     );
     res.cookie("token", token, {
         httpOnly: true,
@@ -21,17 +21,17 @@ const generateToken = (userId, res) => {
 // 1. Register User
 export const registerUser = async (req, res) => {
     try {
-        const {name, email, password} = req.body;
+        const { name, email, password } = req.body;
 
         // Validate input
-        if(!name || !email || !password){
+        if (!name || !email || !password) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
             });
         }
 
-        if(password.length < 8){
+        if (password.length < 8) {
             return res.status(400).json({
                 success: false,
                 message: "Password must be at least 8 characters"
@@ -43,7 +43,7 @@ export const registerUser = async (req, res) => {
             email: email.trim().toLowerCase()
         });
 
-        if(existingUser){
+        if (existingUser) {
             return res.status(409).json({
                 success: false,
                 message: "User already exists"
@@ -75,7 +75,7 @@ export const registerUser = async (req, res) => {
 
 
     } catch (error) {
-        if (error.code === 11000){
+        if (error.code === 11000) {
             return res.status(409).json({
                 success: false,
                 message: "Email already registered"
@@ -87,3 +87,63 @@ export const registerUser = async (req, res) => {
         });
     }
 }
+
+// 2. Login User
+export const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // 1. Validate input
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Email and password are required",
+            });
+        }
+
+        // 2. Find existing user
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password",
+            });
+        }
+
+        // 3. Compare password
+        const isPasswordValid = await bcrypt.compare(
+            password,
+            user.password
+        );
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password",
+            });
+        }
+
+        // 4. Generate JWT and set cookie
+        generateToken(user._id, res);
+
+        // 5. Send response
+        return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+            },
+        });
+
+    } catch (error) {
+        console.error("Login Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
