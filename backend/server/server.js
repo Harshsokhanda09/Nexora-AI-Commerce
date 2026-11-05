@@ -3,6 +3,7 @@ import "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
 import connectDB from "../src/config/db.js";
+import userRouter from "../src/routes/userRouter.js";
 
 const app = express();
 
@@ -20,6 +21,8 @@ app.get("/", (req, res) => {
 // Start server
 const PORT = process.env.PORT || 6000;
 
+// Mount router with prefix
+app.use("/api/auth", userRouter);
 
 const startServer = async () => {
     try {
